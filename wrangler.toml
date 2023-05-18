@@ -1,0 +1,21 @@
+name = "queue-kv-test"
+main = "src/index.ts"
+compatibility_date = "2023-05-18"
+
+usage_model = "unbound"
+logpush = true
+
+[[queues.producers]]
+queue = "kv-test"
+binding = "QUEUE"
+
+[[queues.consumers]]
+queue = "kv-test"
+max_batch_size = 1
+max_batch_timeout = 1
+max_concurrency = 1
+
+[[kv_namespaces]]
+binding = "DATA"
+id = "37e90e7b171a44639c1d2d07bc557620"
+preview_id = "37e90e7b171a44639c1d2d07bc557620"
