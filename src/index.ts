@@ -1,6 +1,6 @@
 export interface Env {
   DATA: KVNamespace
-  QUEUE: Queue<any>
+  QUEUE: Queue<number>
 }
 
 let kvCallsCount = 0
@@ -12,37 +12,29 @@ export default {
     if (n <= 0) n = 10
     if (n > 100) n = 100
 
-    await env.DATA.put('count', n.toString())
-    kvCallsCount++
-
-    console.log(`[fetch] count: ${n}`)
-    await env.QUEUE.send({})
+    console.log(`[fetch] messages to be processed: ${n}`)
+    await env.QUEUE.send(n)
     return new Response('ok')
   },
 
   async queue(batch: MessageBatch<any>, env: Env, executionCtx: ExecutionContext) {
     for (let message of batch.messages) {
       try {
-        const count = (await env.DATA.get('count')) || '0'
+        await env.DATA.get('foo')
+        kvCallsCount++
+        await env.DATA.get('foo')
+        kvCallsCount++
+        await env.DATA.get('foo')
         kvCallsCount++
 
-        let n = +count || 0
-        console.log(`[queue message ${message.id}] count: ${n}`)
-        n--
-
-        if (n > 0) {
-          await env.DATA.put('count', n.toString())
-          kvCallsCount++
-
-          await env.QUEUE.send({})
-          continue
+        if (message.body > 0) {
+          console.log(`[queue message ${message.id}], messages to be processed: ${message.body - 1},  kv ops count: ${kvCallsCount}`)
+          await env.QUEUE.send(message.body - 1)
+        } else {
+          console.log(`[queue message ${message.id}], no more messages to process, kv ops count: ${kvCallsCount}`)
         }
-
-        console.log(`[queue message ${message.id}] reached end of count`)
-        await env.DATA.delete('count')
-        kvCallsCount++
       } catch (e: any) {
-        console.error(e?.stack || e, `kv calls: ${kvCallsCount}`)
+        console.error(e?.stack || e, `kv ops count: ${kvCallsCount}`)
         throw e
       }
     }

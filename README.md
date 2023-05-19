@@ -2,13 +2,15 @@
 
 This simple workers works like this:
 
-- it sets a counter starting from 10 in the kv store when it gets a fetch call (you can POST a number between 0 and 100 in the body, if you want to start from another value)
-- the fetch handler sends a message to the queue which decrements the kv value and triggers another queue message, until the count reaches 0
-- the fetch makes 1 kv operation, each message in the queues makes 2 kv operations (1 get, 1 put)
+- it sets a counter starting from 10 as the message body (you can POST a number between 0 and 100 in the HTML body, if you want to start from another value)
+- the fetch handler sends the counter to the queue which makes kv operations and then triggers another queue message with a decremented counter
+- when the count reaches 0 no more messages are sent to the queue
 
 To reproduce:
 
+- initialize a kv entry with:
+  `npx wrangler kv:key put foo bar --binding DATA --preview false`
 - deploy the worker with logpush enabled (queues logs don't go through wrangler tail apparently)
 - make a get call to `https://queue-kv-test.<organization>.workers.dev/`
 
-The error seems to appear during the 11th kv api call
+The error seems to appear after 5 queue message have been processed
